@@ -2,7 +2,7 @@
 
 const express= require('express');
 const router= express.Router();
-const {registerUser, loginUser, updateUser}= require('../controllers/userController');
+const {registerUser, loginUser, updateUser, logoutUser}= require('../controllers/userController');
 const authenticateUsers= require('../auth/authenticateUsers');
 
 
@@ -10,7 +10,7 @@ const authenticateUsers= require('../auth/authenticateUsers');
 //ROUTER FUNCTIONS
 router.post('/register', registerUser);
 router.post('/login', loginUser);
-
+router.post('/logout/:userId', authenticateUsers, logoutUser);
 router.put('/updateprofile/:userId', authenticateUsers, updateUser);
 
 

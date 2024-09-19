@@ -175,7 +175,6 @@ const {username, password}= req.body;
 
 };
 
-
 //The following function is for updating a user account
 
 
@@ -233,5 +232,63 @@ const updateUser= async(req, res)=>{
 }
 
 
+//The following function is for logging out a user from the vaarbz application
+//It is used to invalidate the user's session and remove the user's token from the database
+
+const logoutUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Checking if the user is logged in
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Checking if the user is logging out their own account
+    if (req.user.id !== userId) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // Removing the user's token from the database
+    await Token.findOneAndDelete({ userId });
+
+    res.json({
+      message: 'Logged out successfully',
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+
+// The following function is for deleting a user from the vaarbz application
+const deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Checking if the user is logged in
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Checking if the user is deleting their own account
+    if (req.user.id !== userId) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // Removing the user's information from the database
+    await Users.findByIdAndDelete(userId);
+
+    res.json({
+      message: 'User deleted successfully',
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+
 //EXPORTING ALL THE CONTROLLER FUNCTIONS
-module.exports= {registerUser, loginUser, updateUser}; 
+module.exports= {registerUser, loginUser, updateUser, logoutUser, deleteUser}; 
