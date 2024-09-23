@@ -290,5 +290,44 @@ const deleteUser = async (req, res) => {
 };
 
 
+// The following function is for getting all users from the vaarbz application
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await Users.find({});
+
+    res.json({
+      message: 'All users retrieved successfully',
+      users,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+// The following function is for getting one user by their ID from the vaarbz application
+const getUserById = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await Users.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      message: 'User retrieved successfully',
+      user,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+
+
 //EXPORTING ALL THE CONTROLLER FUNCTIONS
-module.exports= {registerUser, loginUser, updateUser, logoutUser, deleteUser}; 
+module.exports= {registerUser, loginUser, updateUser,
+   logoutUser, deleteUser, getAllUsers,
+   getUserById}; 

@@ -6,11 +6,12 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const mongoose = require('mongoose');
+const authenticateUsers= require('./auth/authenticateUsers');
 
 //Importing  Routes
 
 const userRoutes = require('./routes/userRoutes');
-
+const messageRoutes= require('./routes/messageRoutes');
 
 
 //MIDDLEWARES
@@ -20,7 +21,7 @@ app.use(express.json());
 
 //Routes middlewares
 app.use('/api/users',userRoutes);
-
+app.use('/api/chats', authenticateUsers, messageRoutes);
 
 /* CONNECT TO MONGO DB */
 
