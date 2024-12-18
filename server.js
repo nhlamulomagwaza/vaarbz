@@ -3,21 +3,24 @@
 //Backbone variables
 require("dotenv").config();
 const express = require("express");
-const app = express();
-const PORT = process.env.PORT || 5000;
+const {app, server}= require('./socket/socket');
+const PORT = process.env.PORT || 3050;
 const mongoose = require('mongoose');
 const authenticateUsers= require('./auth/authenticateUsers');
+const cors= require('cors');
+const corsOptions= require('./config/corsOptions');
 
 //Importing  Routes
 
 const userRoutes = require('./routes/userRoutes');
 const messageRoutes= require('./routes/messageRoutes');
 
-
 //MIDDLEWARES
-
 //Backbone middlewares
 app.use(express.json());
+app.use(cors(corsOptions));
+
+
 
 //Routes middlewares
 app.use('/api/users',userRoutes);
@@ -31,11 +34,11 @@ db.once('open', ()=>{
 console.log('connected to mongodb')
  })
  db.on('error', ()=>{
-    console.log('failed to connect to databasE')
+    console.log('failed to connect to database')
 })
 
 //SERVER LISTENER
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("server started on port ", PORT);
 });

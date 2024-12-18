@@ -3,6 +3,8 @@
 const Conversation= require("../models/conversationModel.js");
 const Message= require("../models/messageModel.js");
 const Users= require('../models/userModel.js');
+const {getReceiverSocketId, io}= require('../socket/socket');
+
 
 
 
@@ -56,7 +58,14 @@ const sendMessage = async (req, res) => {
         await Promise.all([conversation.save(), newMessage.save()]);
 
         // SOCKET IO FUNCTIONALITY WILL GO HERE
-        
+      
+		const receiverSocketId = getReceiverSocketId(receiverId);
+		if (receiverSocketId) {
+			// io.to(<socket_id>).emit() used to send events to specific client
+			io.to(receiverSocketId).emit("newMessage", newMessage);
+             
+		}
+
 
         res.status(201).json(newMessage);
     } catch (error) {

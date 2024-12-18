@@ -5,13 +5,27 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Token= require('../models/tokenModel');
 const RefreshToken= require('../models/refreshTokenModel');
+const fs = require('fs');
+const mongoose=require('mongoose');
+const cloudinary = require('cloudinary').v2;
+
+
+
+//Cloudinary configuration
+ cloudinary.config({
+  cloud_name: 'dofj0x1ml',
+  api_key: '299521161191728',
+  api_secret: process.env.CLOUDINARY_SECRET,
+}); 
+
+
 
 //CONTROLLER FUNCTIONS
 
 
 //The following function is for generating an access token
 const generateAccessToken = (user) => {
-    return jwt.sign({ userId: user._id, username: user.username}, process.env.JWT_SECRET, {expiresIn: '2d'});
+    return jwt.sign({ userId: user._id, username: user.username}, process.env.JWT_SECRET );
   };
 
 
@@ -25,73 +39,85 @@ const generateAccessToken = (user) => {
 
 //The following function is for registering a user to the vaarbz database
 
-const registerUser = async (req, res) => {
+const registerUser   = async (req, res) => {
+  let accessToken; // initializing access token variable
+  let refreshToken; // declare refreshToken here
+  try {
+      const { username, age, gender, city, password } = req.body;
+      const profilePicture = req.file; // This may be undefined if no file is uploaded
 
-   let accessToken; // initializing access token variable
-    try{
+      console.log('req.file:', req.file); // Debugging statement
 
-   
-  const { username, age, gender, city, password } = req.body;
-  if (!username || !age || !gender || !city || !password) {
-    return res.status(400).json({ message: "All fields are required" }); 
-  }
+      if (!username || !age || !gender || !city || !password) {
+          return res.status(400).json({ message: "All fields are required" }); 
+      }
 
-  const userExists= await Users.findOne({ username });
-  if (userExists) {
-    return res.status(400).json({ message: "A user with that username already exists" });
-  }
+      const userExists = await Users.findOne({ username });
+      if (userExists) {
+          return res.status(400).json({ message: "A user with that username already exists" });
+      }
 
-  //Encrypt password
+      // Encrypt password
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+      // Assign a random profile picture based on gender if no file is provided
+      let profileUrl;
+      if (profilePicture) {
+          // Upload the profile picture to Cloudinary
+          const uploadResult = await cloudinary.uploader.upload(profilePicture.path, {
+              folder: 'vaarbs/profilepics',
+              public_id: `vaarbs/profilepics/${username}`,
+          });
+          profileUrl = uploadResult.secure_url;
+      } else {
+          // Assign default profile picture based on gender
+          if (gender === 'male') {
+              profileUrl = `https://avatar.iran.liara.run/public/boy`;
+          } else if (gender === 'female') {
+              profileUrl = `https://avatar.iran.liara.run/public/girl`;
+          } else {
+              return res.status(400).json({ msg: 'Invalid gender. Gender can only be male or female.' });
+          }
+      }
 
-  //The if checks below are for assigning a random profile picture to the user based on their gender
-  if (gender === 'male') {
-    profileUrl = `https://avatar.iran.liara.run/public/boy`;
-  } else if (gender === 'female') {
-    profileUrl = `https://avatar.iran.liara.run/public/girl`;
-  } else {
-    return res.status(400).json({ msg: 'Invalid gender. Gender can only be male or female.' });
-  }
+      // Create a new user in the database
+      const newUser   = await Users.create({
+          username,
+          age,
+          gender,
+          city,
+          profilePicture: profileUrl, // Use the uploaded or default profile picture URL
+          password: hashedPassword,
+      });
 
+      // Generate access and refresh tokens for the new user
+      if (newUser  ) {
+          accessToken = generateAccessToken(newUser );
+          refreshToken = generateRefreshToken(newUser ); // Generate refreshToken
 
-  //After all the checks, we create a new user in the database
-  const newUser = await Users.create({
-    username,
-    age,
-    gender,
-    city,
-    profilePicture: profileUrl,
-    password: hashedPassword,
-  });
+          await Token.create({ token: accessToken, userId: newUser ._id });
+          await RefreshToken.create({ refreshToken: refreshToken, userId: newUser ._id });
+      } else {
+          return res.status(500).json({ message: "Failed to create access token" });
+      }
 
-  //If the user is created successfully, we generate an access and refresh token for that particular user
-  if(newUser){
+      // Return the user object as a JSON response
+      res.status(201).json({
+          message: "User  registered successfully",
+          newUser ,
+          accessToken,
+          refreshToken // Now this will be defined
+      });
 
-     accessToken = generateAccessToken(newUser);
-    await Token.create({ token: accessToken, userId: newUser._id });
-
-    refreshToken= generateRefreshToken(newUser);
-    await RefreshToken.create({refreshToken: refreshToken, userId:newUser._id});
-  
-  } else{
-
-    return res.status(500).json({ message: "Failed to create access token" });
-  }
-
-
-  //Return the user object as a json response
-  res.status(201).json({
-    message: "User registered successfully",
-    newUser,
-    accessToken,
-    refreshToken
-  }) } catch(err){
-    console.log(err)
-    return res.status(500).json({ message: err.message });
+      // Clean up the uploaded file if it exists
+      if (profilePicture && fs.existsSync(profilePicture.path)) {
+          fs.unlinkSync(profilePicture.path);
+      }
+  } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: err.message });
   }
 };
-
 
 
 //The following function is for signing in a user to the vaarbz application
@@ -102,7 +128,7 @@ const loginUser= async(req, res)=>{
   try{
 
 const {username, password}= req.body;
-
+ console.log(req.body)
 
   if(!username || !password){
 
@@ -114,7 +140,7 @@ const {username, password}= req.body;
 
   if(user && user._id){
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password.trim(), user.password);
 
 
     if(isPasswordValid){
@@ -179,56 +205,60 @@ const {username, password}= req.body;
 
 
 
-const updateUser= async(req, res)=>{
-
-
-  try{
+const updateUser = async (req, res) => {
+  try {
       const {username, status, city, age}= req.body;
+      const profilePicture= req.file;
       const userId= req.params.userId;
 
+      if(!username && !status && !city && !age && !profilePicture){
+          return res.status(400).json({ message: "Please provide at least one field to update" });
+      }
 
-  if(!username && !status && !city && !age){
+      console.log(req);
 
+      const user = await Users.findOne({_id: userId});
 
-    return res.status(400).json({ message: "Please provide at least one field to update" });
+      if(!user){
+          return res.status(404).json({ message: "User not found" });
+      }
+
+      // Checking if the user is updating their own account
+      if (req.user.id !== userId) {
+          return res.status(403).json({ message: 'Unauthorized' });
+      }
+
+      let profileUrl = user.profilePicture; // Initialize with the existing profile picture
+
+      // If a new profile picture is provided, upload it to Cloudinary
+      if (profilePicture) {
+          const uploadResult = await cloudinary.uploader.upload(profilePicture.path, {
+              folder: 'vaarbs/profilepics',
+              public_id: `vaarbs/profilepics/${username}`,
+          });
+          profileUrl = uploadResult.secure_url;
+
+          // Delete the temporary file saved on your server
+          fs.unlinkSync(profilePicture.path);
+      }
+
+      // Updating the user's information
+      user.username = username || user.username;
+      user.status = status || user.status;
+      user.city = city || user.city;
+      user.age = age || user.age;
+      user.profilePicture = profileUrl;
+
+      await user.save();
+
+      res.json({
+          message: 'User updated successfully',
+          user
+      });
+  } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: err.message });
   }
-
-  const user= await Users.findOne({_id:userId});
-   
-  if(!user){
-
-    return res.status(404).json({ message: "User not found" });
-  }
-
-
-  //Checking if the user is updating their own account
-  if (req.user.id !== userId) {
-   
-    return res.status(403).json({ message: 'Unauthorized' });
-  }
-  
-   //Updating the user's information
-   user.username= username || user.username;
-   user.status= status || user.status;
-   user.city= city || user.city;
-   user.age= age || user.age;
-
-   await user.save();
-
-
-   res.json({
-
-    message: 'User updated successfully',
-    user
-   })
-
-  }catch(err){
-    console.log(err)
-    return res.status(500).json({ message: err.message });
-
-
-  }
-
 }
 
 
