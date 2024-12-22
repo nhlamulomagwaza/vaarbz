@@ -33,8 +33,7 @@ const sendMessage = async (req, res) => {
         // Fetch the sender and receiver documents from the Users collection
         const sender = await Users.findById(senderId);
         const receiver = await Users.findById(receiverId);
-        console.log(senderId)
-        console.log(receiver)
+       
         if (!sender || !receiver) {
             return res.status(404).json({ msg: 'Sender or receiver not found' });
         }
@@ -60,8 +59,11 @@ const sendMessage = async (req, res) => {
         // SOCKET IO FUNCTIONALITY WILL GO HERE
       
 		const receiverSocketId = getReceiverSocketId(receiverId);
+        
+        console.log('receiverSocketId',receiverSocketId)
 		if (receiverSocketId) {
 			// io.to(<socket_id>).emit() used to send events to specific client
+
 			io.to(receiverSocketId).emit("newMessage", newMessage);
              
 		}
