@@ -3,7 +3,7 @@
 //Backbone variables
 require("dotenv").config();
 const express = require("express");
-const {app, server}= require('./socket/socket');
+const app = express();
 const PORT = process.env.PORT || 3050;
 const mongoose = require('mongoose');
 const authenticateUsers= require('./auth/authenticateUsers');
@@ -25,6 +25,39 @@ app.use(cors(corsOptions));
 //Routes middlewares
 app.use('/api/users',userRoutes);
 app.use('/api/chats', authenticateUsers, messageRoutes);
+
+
+
+
+//SOCKET IO
+
+
+const http = require("http");
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log(`User Connected: ${socket.id}`);
+
+  socket.on("join_room", (data) => {
+    socket.join(data);
+  });
+
+  socket.on("send_message", (data) => {
+    console.log(data)
+    //socket.to(data.room).emit("receive_message", data);
+    socket.broadcast.emit("receive_message", data);
+  });
+});
+
+
 
 /* CONNECT TO MONGO DB */
 

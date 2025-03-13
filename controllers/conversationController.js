@@ -3,7 +3,7 @@
 const Conversation= require("../models/conversationModel.js");
 const Message= require("../models/messageModel.js");
 const Users= require('../models/userModel.js');
-const {getReceiverSocketId, io}= require('../socket/socket');
+
 
 
 
@@ -17,7 +17,7 @@ const {getReceiverSocketId, io}= require('../socket/socket');
 const sendMessage = async (req, res) => {
     try {
         const { message } = req.body;
-        const {receiverId } = req.params;
+        const { receiverId } = req.params;
         const senderId = req.user._id.toString();
 
         let conversation = await Conversation.findOne({
@@ -30,10 +30,9 @@ const sendMessage = async (req, res) => {
             });
         }
 
-        // Fetch the sender and receiver documents from the Users collection
         const sender = await Users.findById(senderId);
         const receiver = await Users.findById(receiverId);
-       
+
         if (!sender || !receiver) {
             return res.status(404).json({ msg: 'Sender or receiver not found' });
         }
@@ -50,24 +49,7 @@ const sendMessage = async (req, res) => {
             conversation.messages.push(newMessage._id);
         }
 
-        // await conversation.save();
-        // await newMessage.save();
-
-        // this will run in parallel
         await Promise.all([conversation.save(), newMessage.save()]);
-
-        // SOCKET IO FUNCTIONALITY WILL GO HERE
-      
-		const receiverSocketId = getReceiverSocketId(receiverId);
-        
-        console.log('receiverSocketId',receiverSocketId)
-		if (receiverSocketId) {
-			// io.to(<socket_id>).emit() used to send events to specific client
-
-			io.to(receiverSocketId).emit("newMessage", newMessage);
-             
-		}
-
 
         res.status(201).json(newMessage);
     } catch (error) {
