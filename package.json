@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "mern chat application",
   "main": "server.js",
+  "type": "commonjs",
   "scripts": {
     "start": "nodemon server"
   },

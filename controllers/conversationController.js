@@ -4,7 +4,7 @@ const Conversation= require("../models/conversationModel.js");
 const Message= require("../models/messageModel.js");
 const Users= require('../models/userModel.js');
 
-
+const { getReceiverSocketId, io } = require('../socket/socket.js');
 
 
 
@@ -50,6 +50,28 @@ const sendMessage = async (req, res) => {
         }
 
         await Promise.all([conversation.save(), newMessage.save()]);
+
+        const receiverSocketId = getReceiverSocketId(receiverId);
+        const senderSocketId = getReceiverSocketId(senderId); // Get the sender's socket ID
+
+        console.log(`Message delivery attempt - Receiver: ${receiverId}, Socket: ${receiverSocketId || 'offline'}`);
+        console.log(`Message delivery attempt - Sender: ${senderId}, Socket: ${senderSocketId || 'offline'}`);
+
+        if (io) {
+            // Emit to the receiver
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit("receive_message", newMessage);
+                console.log(`Message delivered to ${receiverId} via socket ${receiverSocketId}`);
+            }
+
+            // Emit to the sender
+            if (senderSocketId) {
+                io.to(senderSocketId).emit("receive_message", newMessage);
+                console.log(`Message delivered to ${senderId} via socket ${senderSocketId}`);
+            }
+        } else {
+            console.log(`Receiver ${receiverId} is currently offline. Message saved to database.`);
+        }
 
         res.status(201).json(newMessage);
     } catch (error) {

@@ -32,7 +32,7 @@ const generateAccessToken = (user) => {
   //The following function is for generating a refresh token
 
   const generateRefreshToken = (user) => {
-    return jwt.sign({ userId: user._id, username: user.username}, process.env.JWT_SECRET , {expiresIn: '7d'});
+    return jwt.sign({ userId: user._id, username: user.username}, process.env.JWT_SECRET);
   };
 
 
@@ -43,7 +43,7 @@ const registerUser   = async (req, res) => {
   let accessToken; // initializing access token variable
   let refreshToken; // declare refreshToken here
   try {
-      const { username, age, gender, city, password } = req.body;
+      const { username, age, gender, city, password } = req.body.trim();
       const profilePicture = req.file; // This may be undefined if no file is uploaded
 
       console.log('req.file:', req.file); // Debugging statement
