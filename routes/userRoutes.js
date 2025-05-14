@@ -10,7 +10,14 @@ const authenticateUsers= require('../auth/authenticateUsers');
 const multer = require('multer');
 
 // Set up multer storage configuration
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  },
+});
 
 // Set up multer filter
 const fileFilter = (req, file, cb) => {
@@ -23,14 +30,15 @@ const fileFilter = (req, file, cb) => {
 
 // Set up multer middleware
 const upload = multer({
-  storage: storage, // Use memory storage
+  dest: 'uploads/',
+  storage: storage,
   limits: {
     fileSize: 1024 * 1024 * 5, // 5MB
   },
   fileFilter: fileFilter,
 });
 
-//Routes
+
 //ROUTER FUNCTIONS
 //Gets
 router.get("/", authenticateUsers, getAllUsers);

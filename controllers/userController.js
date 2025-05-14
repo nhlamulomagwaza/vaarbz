@@ -43,7 +43,7 @@ const registerUser   = async (req, res) => {
   let accessToken; // initializing access token variable
   let refreshToken; // declare refreshToken here
   try {
-      const { username, age, gender, city, password } = req.body.trim();
+      const { username, age, gender, city, password } = req.body;
       const profilePicture = req.file; // This may be undefined if no file is uploaded
 
       console.log('req.file:', req.file); // Debugging statement
