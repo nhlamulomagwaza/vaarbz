@@ -81,7 +81,7 @@ const registerUser   = async (req, res) => {
       }
 
       // Create a new user in the database
-      const newUser   = await Users.create({
+      const user   = await Users.create({
           username,
           age,
           gender,
@@ -104,7 +104,7 @@ const registerUser   = async (req, res) => {
       // Return the user object as a JSON response
       res.status(201).json({
           message: "User  registered successfully",
-          newUser ,
+          user ,
           accessToken,
           refreshToken // Now this will be defined
       });
