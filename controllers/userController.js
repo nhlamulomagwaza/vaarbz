@@ -91,12 +91,12 @@ const registerUser   = async (req, res) => {
       });
 
       // Generate access and refresh tokens for the new user
-      if (newUser  ) {
-          accessToken = generateAccessToken(newUser );
+      if (user ) {
+          accessToken = generateAccessToken(user );
           refreshToken = generateRefreshToken(newUser ); // Generate refreshToken
 
-          await Token.create({ token: accessToken, userId: newUser ._id });
-          await RefreshToken.create({ refreshToken: refreshToken, userId: newUser ._id });
+          await Token.create({ token: accessToken, userId: user ._id });
+          await RefreshToken.create({ refreshToken: refreshToken, userId: user ._id });
       } else {
           return res.status(500).json({ message: "Failed to create access token" });
       }
