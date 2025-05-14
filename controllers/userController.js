@@ -93,7 +93,7 @@ const registerUser   = async (req, res) => {
       // Generate access and refresh tokens for the new user
       if (user ) {
           accessToken = generateAccessToken(user );
-          refreshToken = generateRefreshToken(newUser ); // Generate refreshToken
+          refreshToken = generateRefreshToken(user ); // Generate refreshToken
 
           await Token.create({ token: accessToken, userId: user ._id });
           await RefreshToken.create({ refreshToken: refreshToken, userId: user ._id });
