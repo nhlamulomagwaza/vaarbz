@@ -38,7 +38,7 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-
+//Routes
 //ROUTER FUNCTIONS
 //Gets
 router.get("/", authenticateUsers, getAllUsers);
