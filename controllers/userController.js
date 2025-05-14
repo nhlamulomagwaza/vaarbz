@@ -111,13 +111,13 @@ const registerUser   = async (req, res) => {
 
       // Clean up the uploaded file if it exists
            // Clean up the uploaded file if it exists
-      if (profilePicture && fs.existsSync(profilePicture.path)) {
+      /* if (profilePicture && fs.existsSync(profilePicture.path)) {
           try {
               fs.unlinkSync(profilePicture.path); // Delete the file only if it exists
           } catch (err) {
               console.error('Error deleting file:', err); // Log any errors during deletion
           }
-      } // Close the if block
+      } */ // Close the if block
 
   } catch (err) {
       console.error(err);
