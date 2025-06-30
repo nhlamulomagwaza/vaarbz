@@ -6,6 +6,7 @@ const allowedOrigins = [
     'http://localhost:5173',
     "https://vaarbzapp.onrender.com",
     "http://vaarbzapp.onrender.com",
+    "exp://192.168.0.104:8081",
  
 ]
 
